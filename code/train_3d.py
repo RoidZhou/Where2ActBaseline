@@ -177,7 +177,7 @@ def train(conf, train_shape_list, train_data_list, val_data_list, all_train_data
             utils.printout(conf.flog, f'training run {conf.exp_name}')
             utils.printout(conf.flog, header)
 
-        train_batches = enumerate(train_dataloader, 0)
+        train_batches = enumerate(train_dataloader, 0) # enumerate 将一个可遍历的数据对象组合为一个索引序列，同时列出数据和数据下标
         val_batches = enumerate(val_dataloader, 0)
 
         train_fraction_done = 0.0
@@ -457,7 +457,7 @@ if __name__ == '__main__':
     parser.add_argument('--weight_decay', type=float, default=1e-5)
     parser.add_argument('--lr_decay_by', type=float, default=0.9)
     parser.add_argument('--lr_decay_every', type=float, default=5000)
-    parser.add_argument('--sample_succ', action='store_true', default=False)
+    parser.add_argument('--sample_succ', action='store_true', default=False) # 用户在命令行中包含了--sample_succ，那么与该选项关联的变量将被设置为True
 
     # loss weights
     parser.add_argument('--loss_weight_critic', type=float, default=1.0, help='loss weight')
@@ -576,7 +576,8 @@ if __name__ == '__main__':
     utils.printout(flog, 'len(train_shape_list): %d' % len(train_shape_list))
     
     with open(os.path.join(conf.offline_data_dir, 'data_tuple_list.txt'), 'r') as fin:
-        all_train_data_list = [os.path.join(conf.offline_data_dir, l.rstrip()) for l in fin.readlines()]
+        all_train_data_list = [os.path.join(conf.offline_data_dir, l.rstrip()) for l in fin.readlines()] # 将处理后的文件路径列表赋值给变量all_train_data_list
+
     utils.printout(flog, 'len(all_train_data_list): %d' % len(all_train_data_list))
     if conf.resume:
         train_data_list = None

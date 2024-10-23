@@ -20,10 +20,10 @@ from camera import Camera
 from robots.panda_robot import Robot
 
 parser = ArgumentParser()
-parser.add_argument('shape_id', type=str)
-parser.add_argument('category', type=str)
-parser.add_argument('cnt_id', type=int)
-parser.add_argument('primact_type', type=str)
+parser.add_argument('shape_id', type=str) # 40147
+parser.add_argument('category', type=str) # StorageFurniture
+parser.add_argument('cnt_id', type=int) # 0
+parser.add_argument('primact_type', type=str) # pushing
 parser.add_argument('--out_dir', type=str)
 parser.add_argument('--trial_id', type=int, default=0, help='trial id')
 parser.add_argument('--random_seed', type=int, default=None)
@@ -41,7 +41,7 @@ if os.path.exists(out_dir):
     shutil.rmtree(out_dir)
 os.mkdir(out_dir)
 flog = open(os.path.join(out_dir, 'log.txt'), 'w')
-out_info = dict()
+out_info = dict() # 创建一个空字典
 
 # set random seed
 if args.random_seed is not None:
@@ -104,7 +104,9 @@ if still_timesteps < 5000:
 rgb, depth = cam.get_observation()
 Image.fromarray((rgb*255).astype(np.uint8)).save(os.path.join(out_dir, 'rgb.png'))
 
-cam_XYZA_id1, cam_XYZA_id2, cam_XYZA_pts = cam.compute_camera_XYZA(depth)
+# 根据深度图（depth）和相机的内参矩阵来计算相机坐标系中的三维点
+cam_XYZA_id1, cam_XYZA_id2, cam_XYZA_pts = cam.compute_camera_XYZA(depth) # 返回有效深度值的像素位置（y, x）和计算出的三维点坐标（points）。
+# 将计算出的三维点信息组织成一个矩阵格式。
 cam_XYZA = cam.compute_XYZA_matrix(cam_XYZA_id1, cam_XYZA_id2, cam_XYZA_pts, depth.shape[0], depth.shape[1])
 save_h5(os.path.join(out_dir, 'cam_XYZA.h5'), \
         [(cam_XYZA_id1.astype(np.uint64), 'id1', 'uint64'), \

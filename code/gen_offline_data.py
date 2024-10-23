@@ -4,6 +4,18 @@ from argparse import ArgumentParser
 
 from datagen import DataGen
 
+
+'''
+Run Command : 
+
+python gen_offline_data.py \
+  --data_dir ../data/gt_data-train_10cats_train_data-pushing \
+  --data_fn ../stats/train_10cats_train_data_list.txt \
+  --primact_types pushing \
+  --num_processes [?] \
+  --num_epochs 150 \
+  --ins_cnt_fn ../stats/ins_cnt_15cats.txt
+'''
 parser = ArgumentParser()
 parser.add_argument('--data_dir', type=str, help='data directory')
 parser.add_argument('--data_fn', type=str, help='data file that indexs all shape-ids')
@@ -41,7 +53,7 @@ print(cat2freq)
 
 datagen = DataGen(conf.num_processes)
 
-with open(conf.data_fn, 'r') as fin:
+with open(conf.data_fn, 'r') as fin: # open file on only read mode, if file not exist, is not created.
     for l in fin.readlines():
         shape_id, cat = l.rstrip().split()
         if cat in conf.category_types:
@@ -51,7 +63,7 @@ with open(conf.data_fn, 'r') as fin:
                         #print(shape_id, cat, epoch, cnt_id)
                         datagen.add_one_collect_job(conf.data_dir, shape_id, cat, cnt_id, primact_type, epoch)
 
-datagen.start_all()
+datagen.start_all() # 对每个Job调用 collect_data.py 进行处理
 
 data_tuple_list = datagen.join_all()
 with open(os.path.join(conf.data_dir, conf.out_fn), 'w') as fout:

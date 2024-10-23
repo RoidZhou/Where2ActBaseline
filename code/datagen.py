@@ -81,10 +81,10 @@ class DataGen(object):
 
         total_todos = len(self)
         num_todos_per_process = int(np.ceil(total_todos / self.num_processes))
-        np.random.shuffle(self.todos)
+        np.random.shuffle(self.todos) #将 self.todos 列表或数组中的元素顺序随机打乱。
         for i in range(self.num_processes):
             todos = self.todos[i*num_todos_per_process: min(total_todos, (i+1)*num_todos_per_process)]
-            p = mp.Process(target=self.job_func, args=(i, todos, self.Q))
+            p = mp.Process(target=self.job_func, args=(i, todos, self.Q)) # mp.Process 被用来创建一个新的进程，该进程将执行 self.job_func 函数，并传递给它一些参数。
             p.start()
             self.processes.append(p)
         

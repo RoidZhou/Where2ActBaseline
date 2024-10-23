@@ -60,11 +60,11 @@ class Camera(object):
 
     def compute_camera_XYZA(self, depth):
         camera_matrix = self.camera.get_camera_matrix()[:3, :3]
-        y, x = np.where(depth < 1)
+        y, x = np.where(depth < 1) # 输出所有为True的元素的索引
         z = self.near * self.far / (self.far + depth * (self.near - self.far))
         permutation = np.array([[0, 0, 1], [-1, 0, 0], [0, -1, 0]])
         points = (permutation @ np.dot(np.linalg.inv(camera_matrix), \
-            np.stack([x, y, np.ones_like(x)] * z[y, x], 0))).T
+            np.stack([x, y, np.ones_like(x)] * z[y, x], 0))).T # np.ones_like(x)为 写成齐次坐标形式，*z[y, x]为了将深度值映射到一个特定的范围内
         return y, x, points
 
     @staticmethod
