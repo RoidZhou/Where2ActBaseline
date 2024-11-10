@@ -25,27 +25,32 @@ class Robot(object):
 
         # hand (EE), two grippers, the rest arm joints (if any)
         self.end_effector_index, self.end_effector = \
-            [(i, l) for i, l in enumerate(self.robot.get_links()) if l.name == 'panda_hand'][0]
+            [(i, l) for i, l in enumerate(self.robot.get_links()) if l.name == 'robotiq_arg2f_base_link'][0]
         self.hand_actor_id = self.end_effector.get_id()
         self.gripper_joints = [joint for joint in self.robot.get_joints() if 
-                joint.get_name().startswith("panda_finger_joint")]
+                joint.get_name().endswith("_knuckle_joint") or joint.get_name().endswith("inner_finger_joint")] # left_inner_finger_joint right_inner_finger_joint
+        # self.gripper_inner_knuckle_joint = [joint for joint in self.robot.get_joints() if 
+        #         joint.get_name().endswith("inner_knuckle_joint")]  # left_inner_knuckle_joint right_inner_knuckle_joint
+        # self.gripper_outer_knuckle_joint = [joint for joint in self.robot.get_joints() if 
+        #         joint.get_name().endswith("outer_knuckle_joint") or joint.get_name().startswith("finger_joint")] 
+
         self.gripper_actor_ids = [joint.get_child_link().get_id() for joint in self.gripper_joints] # 
         self.arm_joints = [joint for joint in self.robot.get_joints() if
-                joint.get_dof() > 0 and not joint.get_name().startswith("panda_finger")]
+                joint.get_dof() > 0 and (not joint.get_name().endswith("_knuckle_joint") and not joint.get_name().endswith("inner_finger_joint"))]
 
         # set drive joint property
         for joint in self.arm_joints:
             joint.set_drive_property(1000, 400)
         for joint in self.gripper_joints:
-            joint.set_drive_property(200, 60)
+            joint.set_drive_property(500, 60)
 
         # open/close the gripper at start
         if open_gripper:
             joint_angles = []
             for j in self.robot.get_joints():
                 if j.get_dof() == 1:
-                    if j.get_name().startswith("panda_finger_joint"):
-                        joint_angles.append(0.04)
+                    if j.get_name().endswith("_knuckle_joint"):
+                        joint_angles.append(0)
                     else:
                         joint_angles.append(0)
             self.robot.set_qpos(joint_angles)
@@ -69,10 +74,10 @@ class Robot(object):
         assert twist.size == 6
         # Jacobian define in SAPIEN use twist (v, \omega) which is different from the definition in the slides
         # So we perform the matrix block operation below
-        dense_jacobian = self.robot.compute_spatial_twist_jacobian()  # (num_link * 6, dof()) (48,8)
-        ee_jacobian = np.zeros([6, self.robot.dof - 2]) # (6,6)              self.end_effector_index = 6
-        ee_jacobian[:3, :] = dense_jacobian[self.end_effector_index * 6 - 3: self.end_effector_index * 6, :self.robot.dof - 2] # [33:36, :6]
-        ee_jacobian[3:6, :] = dense_jacobian[(self.end_effector_index - 1) * 6: self.end_effector_index * 6 - 3, :self.robot.dof - 2] # [30:33, :6]
+        dense_jacobian = self.robot.compute_spatial_twist_jacobian()  # (num_link * 6, dof()) (96, 12)
+        ee_jacobian = np.zeros([6, self.robot.dof - 6]) # 2 修改为6  (6,6)
+        ee_jacobian[:3, :] = dense_jacobian[self.end_effector_index * 6 - 3: self.end_effector_index * 6, :self.robot.dof - 6] # 2 修改为6   [33:36, :6]
+        ee_jacobian[3:6, :] = dense_jacobian[(self.end_effector_index - 1) * 6: self.end_effector_index * 6 - 3, :self.robot.dof - 6] # 2 修改为6   [30:33, :6]
 
         #numerical_small_bool = ee_jacobian < 1e-1
         #ee_jacobian[numerical_small_bool] = 0
@@ -97,7 +102,7 @@ class Robot(object):
 
         """
         assert qvel.size == len(self.arm_joints)
-        target_qpos = qvel * self.timestep + self.robot.get_drive_target()[:-2]
+        target_qpos = qvel * self.timestep + self.robot.get_drive_target()[:-6] # 2 修改为6
         for i, joint in enumerate(self.arm_joints):
             joint.set_drive_velocity_target(qvel[i])
             joint.set_drive_target(target_qpos[i])
@@ -135,12 +140,24 @@ class Robot(object):
         return
 
     def close_gripper(self):
-        for joint in self.gripper_joints:
-            joint.set_drive_target(0.0)
+        for joint in self.gripper_joints: # -0.8 - 1
+            joint.set_drive_target(1)
+        
+        # for joint in self.gripper_inner_knuckle_joint: # 0-0.87
+        #     joint.set_drive_target(0.1)
+
+        # for joint in self.gripper_outer_knuckle_joint: # 0-0.8
+        #     joint.set_drive_target(0.1)
 
     def open_gripper(self):
-        for joint in self.gripper_joints:
-            joint.set_drive_target(0.04)
+        for joint in self.gripper_joints: # -0.8 - 1
+            joint.set_drive_target(0)
+        
+        # for joint in self.gripper_inner_knuckle_joint: # 0-0.87
+        #     joint.set_drive_target(0.8)
+
+        # for joint in self.gripper_outer_knuckle_joint: # 0-0.8
+        #     joint.set_drive_target(0.7)
 
     def clear_velocity_command(self):
         for joint in self.arm_joints:
@@ -151,7 +168,7 @@ class Robot(object):
         for i in range(n):
             passive_force = self.robot.compute_passive_force()
             self.robot.set_qf(passive_force)
-            self.env.step(custom)
+            self.env.step()
             self.env.render()
         self.robot.set_qf([0] * self.robot.dof)
 
