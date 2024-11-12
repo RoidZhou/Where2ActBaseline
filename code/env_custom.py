@@ -252,6 +252,10 @@ class Env(object):
             return True
         else:
             print("all contact ", self.contacts)
+            self.finger1_contact = False
+            self.finger2_contact = False
+            self.step_length += 1
+
             for c in self.contacts:
                 aid1 = c.actor1.get_id()
                 aid2 = c.actor2.get_id()
@@ -263,12 +267,16 @@ class Env(object):
                         break
                 if has_impulse and self.first_timestep_check_contact:
                     print("first contact object")
-
+                    if (aid1 in self.robot_gripper_actor_ids and aid2 == self.target_object_part_actor_id) or \
+                    (aid2 in self.robot_gripper_actor_ids and aid1 == self.target_object_part_actor_id) or \
+                    (c.actor1.get_name()=='ground' and c.actor2.get_name()=='baseLink') or \
+                    (c.actor2.get_name()=='ground' and c.actor1.get_name()=='baseLink') or \
+                    (c.actor1.get_name()=='baseLink' and aid2 in self.robot_gripper_actor_ids) or \
+                    (c.actor2.get_name()=='baseLink' and aid1 in self.robot_gripper_actor_ids):
+                        break
                     return False
-                    # return True
                 elif has_impulse and not self.first_timestep_check_contact:
                     print("last contact object", self.step_length)
-                    self.step_length += 1
                     if (aid1 in self.robot_gripper_actor_ids and aid2 in self.robot_gripper_actor_ids): # robot gripper Link(panda_leftfinger/panda_rightfinger)
                         return False
 
@@ -280,18 +288,19 @@ class Env(object):
                             return False
                         elif (c.actor1.get_name()=='baseLink' and aid2 in self.robot_gripper_actor_ids):
                             self.finger1_contact = True
-                            return True
                         elif (c.actor2.get_name()=='baseLink' and aid1 in self.robot_gripper_actor_ids):
                             self.finger2_contact = True
-                            return True
                         
                         # elif (c.actor1.get_name()=='baseLink' and aid2 == self.robot_hand_actor_id) or (c.actor2.get_name()=='baseLink' and aid1 == self.robot_hand_actor_id):
                         #     return True
                 elif not has_impulse and self.first_timestep_check_contact:
                     print("first not contact object", self.step_length)
-                    self.step_length += 1
                     return True
-            if (self.finger1_contact and self.finger2_contact):
+            if (self.step_length == 500 and not self.first_timestep_check_contact and self.finger1_contact and self.finger2_contact):
+                return True
+            elif (not self.first_timestep_check_contact and (self.finger1_contact or self.finger2_contact)):
+                return True
+            elif (self.first_timestep_check_contact):
                 return True
             else:
                 print("no contact succ")

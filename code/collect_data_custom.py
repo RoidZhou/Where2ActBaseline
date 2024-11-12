@@ -240,7 +240,7 @@ out_info['position_world'] = position_world.tolist()
 # compute final pose
 up = np.array(action_direction_world, dtype=np.float32)
 forward = np.random.randn(3).astype(np.float32)
-while abs(up @ forward) > 0.99:
+while (up @ forward) > 0.99 or (up @ forward) < 0:
     forward = np.random.randn(3).astype(np.float32)
 left = np.cross(up, forward)
 left /= np.linalg.norm(left)
@@ -290,6 +290,7 @@ robot = Robot(env, robot_urdf_fn, robot_material)
 robot.robot.set_root_pose(final_pose)
 env.render()
 rgb_final_pose, _ = cam.get_observation()
+rgb_final_pose = cv2.circle(rgb_final_pose, (y, x), radius=2, color=(255, 0, 3), thickness=5)
 Image.fromarray((rgb_final_pose*255).astype(np.uint8)).save(os.path.join(out_dir, 'viz_target_pose.png'))
 
 # move back
